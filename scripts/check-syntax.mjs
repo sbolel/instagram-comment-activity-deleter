@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 const files = []
 
-for (const root of ['src', 'scripts', 'test']) {
+for (const root of ['src', 'scripts', 'test', 'dist', 'apps']) {
   await collectJavaScriptFiles(root)
 }
 
@@ -15,7 +15,7 @@ async function collectJavaScriptFiles(directory) {
 
   for (const entry of entries) {
     const path = join(directory, entry.name)
-    if (entry.isDirectory()) {
+    if (entry.isDirectory() && entry.name !== 'node_modules') {
       await collectJavaScriptFiles(path)
     } else if (/\.[cm]?js$/.test(entry.name)) {
       files.push(path)
