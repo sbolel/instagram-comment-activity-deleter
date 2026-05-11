@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Manifest V3 Chrome extension wrapper for Instagram Comment Activity Deleter.",
   "scripts": {
-    "build": "node --disable-warning=ExperimentalWarning ../../scripts/build-extension.mjs",
+    "build": "node ../../scripts/build-extension.mjs",
     "check": "node --check dist/content.js && node --check dist/popup.js"
   }
 }

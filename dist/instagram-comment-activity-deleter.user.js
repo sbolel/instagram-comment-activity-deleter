@@ -20,17 +20,17 @@ const DEFAULT_OPTIONS = Object.freeze({
     elementTimeoutMs: 30_000,
     pollIntervalMs: 100,
     dryRun: false,
-    maxBatches: Number.POSITIVE_INFINITY
+    maxBatches: Number.POSITIVE_INFINITY,
 });
 const DEFAULT_SELECTORS = Object.freeze({
     pageButtons: 'button,[role="button"],div',
     checkbox: '[aria-label="Toggle checkbox"]',
     deleteButton: '[aria-label="Delete"]',
-    confirmButton: 'button[tabindex="0"]'
+    confirmButton: 'button[tabindex="0"]',
 });
 class InstagramCommentDeletionError extends Error {
     details;
-    constructor(message, details = {}){
+    constructor(message, details = {}) {
         super(message);
         this.name = 'InstagramCommentDeletionError';
         this.details = details;
@@ -38,27 +38,25 @@ class InstagramCommentDeletionError extends Error {
 }
 function createInstagramCommentDeleter(options = {}) {
     const config = normalizeOptions(options);
-    const selectors = {
-        ...DEFAULT_SELECTORS,
-        ...options.selectors
-    };
+    const selectors = { ...DEFAULT_SELECTORS, ...options.selectors };
     const root = options.root ?? globalThis.document;
     const logger = options.logger ?? globalThis.console;
-    const delay = options.delay ?? ((ms)=>new Promise((resolve)=>setTimeout(resolve, ms)));
+    const delay = options.delay ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
     if (!root?.querySelector || !root?.querySelectorAll) {
         throw new InstagramCommentDeletionError('A DOM document or root element is required');
     }
-    const wait = (ms)=>delay(ms);
+    const wait = (ms) => delay(ms);
     async function waitForElement(selector, timeoutMs = config.elementTimeoutMs) {
         const startedAt = Date.now();
-        while(Date.now() - startedAt < timeoutMs){
+        while (Date.now() - startedAt < timeoutMs) {
             const element = root.querySelector(selector);
-            if (element) return element;
+            if (element)
+                return element;
             await wait(config.pollIntervalMs);
         }
         throw new InstagramCommentDeletionError(`Element not found: ${selector}`, {
             selector,
-            timeoutMs
+            timeoutMs,
         });
     }
     async function clickElement(element, label) {
@@ -70,22 +68,23 @@ function createInstagramCommentDeleter(options = {}) {
     }
     function getSelectButton() {
         const buttons = Array.from(root.querySelectorAll(selectors.pageButtons));
-        return buttons.find((button)=>getElementLabel(button) === 'Select') ?? null;
+        return buttons.find((button) => getElementLabel(button) === 'Select') ?? null;
     }
     async function waitForSelectButton() {
         const startedAt = Date.now();
-        while(Date.now() - startedAt < config.selectButtonTimeoutMs){
-            if (getSelectButton()) return;
+        while (Date.now() - startedAt < config.selectButtonTimeoutMs) {
+            if (getSelectButton())
+                return;
             await wait(1000);
         }
         throw new InstagramCommentDeletionError('Select button did not reappear after deletion', {
-            timeoutMs: config.selectButtonTimeoutMs
+            timeoutMs: config.selectButtonTimeoutMs,
         });
     }
     async function selectBatch() {
         const checkboxes = Array.from(root.querySelectorAll(selectors.checkbox));
         const selected = checkboxes.slice(0, config.batchSize);
-        for (const checkbox of selected){
+        for (const checkbox of selected) {
             asClickable(checkbox, 'comment checkbox')?.click();
             await wait(config.checkboxDelayMs);
         }
@@ -106,9 +105,9 @@ function createInstagramCommentDeleter(options = {}) {
             batchesAttempted: 0,
             commentsSelected: 0,
             dryRun: config.dryRun,
-            stoppedBecause: null
+            stoppedBecause: null,
         };
-        while(stats.batchesAttempted < config.maxBatches){
+        while (stats.batchesAttempted < config.maxBatches) {
             const selectButton = getSelectButton();
             if (!selectButton) {
                 throw new InstagramCommentDeletionError('Select button not found');
@@ -141,21 +140,12 @@ function createInstagramCommentDeleter(options = {}) {
         waitForElement,
         getSelectButton,
         selectBatch,
-        deleteSelectedComments
+        deleteSelectedComments,
     };
 }
 function normalizeOptions(options) {
-    const config = {
-        ...DEFAULT_OPTIONS,
-        ...options
-    };
-    for (const key of [
-        'batchSize',
-        'actionDelayMs',
-        'checkboxDelayMs',
-        'elementTimeoutMs',
-        'pollIntervalMs'
-    ]){
+    const config = { ...DEFAULT_OPTIONS, ...options };
+    for (const key of ['batchSize', 'actionDelayMs', 'checkboxDelayMs', 'elementTimeoutMs', 'pollIntervalMs']) {
         if (!Number.isFinite(config[key]) || config[key] < 0) {
             throw new InstagramCommentDeletionError(`Invalid numeric option: ${key}`);
         }
@@ -163,7 +153,8 @@ function normalizeOptions(options) {
     if (!Number.isFinite(config.selectButtonTimeoutMs) || config.selectButtonTimeoutMs <= 0) {
         throw new InstagramCommentDeletionError('Invalid numeric option: selectButtonTimeoutMs');
     }
-    if (config.maxBatches !== Number.POSITIVE_INFINITY && (!Number.isFinite(config.maxBatches) || config.maxBatches < 1)) {
+    if (config.maxBatches !== Number.POSITIVE_INFINITY &&
+        (!Number.isFinite(config.maxBatches) || config.maxBatches < 1)) {
         throw new InstagramCommentDeletionError('Invalid numeric option: maxBatches');
     }
     config.batchSize = Math.floor(config.batchSize);
@@ -171,7 +162,8 @@ function normalizeOptions(options) {
     return config;
 }
 function asClickable(element, label) {
-    if (!element) return null;
+    if (!element)
+        return null;
     if (typeof element.click !== 'function') {
         throw new InstagramCommentDeletionError(`Element is not clickable: ${label}`);
     }

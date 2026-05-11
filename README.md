@@ -113,6 +113,7 @@ TypeScript source lives in `src/`.
 - `apps/chrome-extension/`: Manifest V3 extension workspace.
 - `scripts/build.mjs`: creates browser-ready files in `dist/`.
 - `scripts/build-extension.mjs`: creates unpacked extension files in `apps/chrome-extension/dist/`.
+- `scripts/transpile-typescript.mjs`: stable TypeScript compiler-based transform used by the build scripts.
 - `test/`: Node test coverage using lightweight DOM fakes.
 
 Run all checks:

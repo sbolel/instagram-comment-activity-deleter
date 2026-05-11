@@ -11,17 +11,17 @@ const DEFAULT_OPTIONS = Object.freeze({
     elementTimeoutMs: 30_000,
     pollIntervalMs: 100,
     dryRun: false,
-    maxBatches: Number.POSITIVE_INFINITY
+    maxBatches: Number.POSITIVE_INFINITY,
 });
 const DEFAULT_SELECTORS = Object.freeze({
     pageButtons: 'button,[role="button"],div',
     checkbox: '[aria-label="Toggle checkbox"]',
     deleteButton: '[aria-label="Delete"]',
-    confirmButton: 'button[tabindex="0"]'
+    confirmButton: 'button[tabindex="0"]',
 });
 class InstagramCommentDeletionError extends Error {
     details;
-    constructor(message, details = {}){
+    constructor(message, details = {}) {
         super(message);
         this.name = 'InstagramCommentDeletionError';
         this.details = details;
@@ -29,27 +29,25 @@ class InstagramCommentDeletionError extends Error {
 }
 function createInstagramCommentDeleter(options = {}) {
     const config = normalizeOptions(options);
-    const selectors = {
-        ...DEFAULT_SELECTORS,
-        ...options.selectors
-    };
+    const selectors = { ...DEFAULT_SELECTORS, ...options.selectors };
     const root = options.root ?? globalThis.document;
     const logger = options.logger ?? globalThis.console;
-    const delay = options.delay ?? ((ms)=>new Promise((resolve)=>setTimeout(resolve, ms)));
+    const delay = options.delay ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
     if (!root?.querySelector || !root?.querySelectorAll) {
         throw new InstagramCommentDeletionError('A DOM document or root element is required');
     }
-    const wait = (ms)=>delay(ms);
+    const wait = (ms) => delay(ms);
     async function waitForElement(selector, timeoutMs = config.elementTimeoutMs) {
         const startedAt = Date.now();
-        while(Date.now() - startedAt < timeoutMs){
+        while (Date.now() - startedAt < timeoutMs) {
             const element = root.querySelector(selector);
-            if (element) return element;
+            if (element)
+                return element;
             await wait(config.pollIntervalMs);
         }
         throw new InstagramCommentDeletionError(`Element not found: ${selector}`, {
             selector,
-            timeoutMs
+            timeoutMs,
         });
     }
     async function clickElement(element, label) {
@@ -61,22 +59,23 @@ function createInstagramCommentDeleter(options = {}) {
     }
     function getSelectButton() {
         const buttons = Array.from(root.querySelectorAll(selectors.pageButtons));
-        return buttons.find((button)=>getElementLabel(button) === 'Select') ?? null;
+        return buttons.find((button) => getElementLabel(button) === 'Select') ?? null;
     }
     async function waitForSelectButton() {
         const startedAt = Date.now();
-        while(Date.now() - startedAt < config.selectButtonTimeoutMs){
-            if (getSelectButton()) return;
+        while (Date.now() - startedAt < config.selectButtonTimeoutMs) {
+            if (getSelectButton())
+                return;
             await wait(1000);
         }
         throw new InstagramCommentDeletionError('Select button did not reappear after deletion', {
-            timeoutMs: config.selectButtonTimeoutMs
+            timeoutMs: config.selectButtonTimeoutMs,
         });
     }
     async function selectBatch() {
         const checkboxes = Array.from(root.querySelectorAll(selectors.checkbox));
         const selected = checkboxes.slice(0, config.batchSize);
-        for (const checkbox of selected){
+        for (const checkbox of selected) {
             asClickable(checkbox, 'comment checkbox')?.click();
             await wait(config.checkboxDelayMs);
         }
@@ -97,9 +96,9 @@ function createInstagramCommentDeleter(options = {}) {
             batchesAttempted: 0,
             commentsSelected: 0,
             dryRun: config.dryRun,
-            stoppedBecause: null
+            stoppedBecause: null,
         };
-        while(stats.batchesAttempted < config.maxBatches){
+        while (stats.batchesAttempted < config.maxBatches) {
             const selectButton = getSelectButton();
             if (!selectButton) {
                 throw new InstagramCommentDeletionError('Select button not found');
@@ -132,21 +131,12 @@ function createInstagramCommentDeleter(options = {}) {
         waitForElement,
         getSelectButton,
         selectBatch,
-        deleteSelectedComments
+        deleteSelectedComments,
     };
 }
 function normalizeOptions(options) {
-    const config = {
-        ...DEFAULT_OPTIONS,
-        ...options
-    };
-    for (const key of [
-        'batchSize',
-        'actionDelayMs',
-        'checkboxDelayMs',
-        'elementTimeoutMs',
-        'pollIntervalMs'
-    ]){
+    const config = { ...DEFAULT_OPTIONS, ...options };
+    for (const key of ['batchSize', 'actionDelayMs', 'checkboxDelayMs', 'elementTimeoutMs', 'pollIntervalMs']) {
         if (!Number.isFinite(config[key]) || config[key] < 0) {
             throw new InstagramCommentDeletionError(`Invalid numeric option: ${key}`);
         }
@@ -154,7 +144,8 @@ function normalizeOptions(options) {
     if (!Number.isFinite(config.selectButtonTimeoutMs) || config.selectButtonTimeoutMs <= 0) {
         throw new InstagramCommentDeletionError('Invalid numeric option: selectButtonTimeoutMs');
     }
-    if (config.maxBatches !== Number.POSITIVE_INFINITY && (!Number.isFinite(config.maxBatches) || config.maxBatches < 1)) {
+    if (config.maxBatches !== Number.POSITIVE_INFINITY &&
+        (!Number.isFinite(config.maxBatches) || config.maxBatches < 1)) {
         throw new InstagramCommentDeletionError('Invalid numeric option: maxBatches');
     }
     config.batchSize = Math.floor(config.batchSize);
@@ -162,7 +153,8 @@ function normalizeOptions(options) {
     return config;
 }
 function asClickable(element, label) {
-    if (!element) return null;
+    if (!element)
+        return null;
     if (typeof element.click !== 'function') {
         throw new InstagramCommentDeletionError(`Element is not clickable: ${label}`);
     }
@@ -173,14 +165,14 @@ function getElementLabel(element) {
 }
 
 
-const state = globalThis.__ICAD_EXTENSION__ ??= {
+const state = (globalThis.__ICAD_EXTENSION__ ??= {
     installed: false,
     running: false,
     lastStats: null,
-    lastError: null
-};
+    lastError: null,
+});
 if (!state.installed) {
-    chrome.runtime.onMessage.addListener((message, _sender, sendResponse)=>{
+    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         handleMessage(message).then(sendResponse);
         return true;
     });
@@ -197,27 +189,25 @@ async function handleMessage(message) {
                 status: {
                     running: state.running,
                     lastStats: state.lastStats,
-                    lastError: state.lastError
-                }
+                    lastError: state.lastError,
+                },
             };
         }
         if (message.command === 'reset') {
-            return {
-                ok: true,
-                reset: resetSelection()
-            };
+            return { ok: true, reset: resetSelection() };
         }
         if (message.command === 'run') {
             return await runDeletion(message.options);
         }
         throw new InstagramCommentDeletionError('Unsupported extension command');
-    } catch (error) {
+    }
+    catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         state.lastError = message;
         return {
             ok: false,
             error: message,
-            details: error instanceof InstagramCommentDeletionError ? error.details : undefined
+            details: error instanceof InstagramCommentDeletionError ? error.details : undefined,
         };
     }
 }
@@ -232,25 +222,23 @@ async function runDeletion(options) {
         const deleter = createInstagramCommentDeleter({
             ...options,
             logger: {
-                info: (...items)=>{
+                info: (...items) => {
                     logs.push(items.map(formatLogItem).join(' '));
-                }
-            }
+                },
+            },
         });
         const stats = await deleter.run();
         state.lastStats = stats;
-        return {
-            ok: true,
-            stats,
-            logs
-        };
-    } finally{
+        return { ok: true, stats, logs };
+    }
+    finally {
         state.running = false;
     }
 }
 function resetSelection() {
-    const cancelButton = Array.from(document.querySelectorAll('button,[role="button"],div')).find((element)=>(element.getAttribute('aria-label') ?? element.textContent ?? '').trim() === 'Cancel');
-    if (!cancelButton?.click) return false;
+    const cancelButton = Array.from(document.querySelectorAll('button,[role="button"],div')).find((element) => (element.getAttribute('aria-label') ?? element.textContent ?? '').trim() === 'Cancel');
+    if (!cancelButton?.click)
+        return false;
     cancelButton.click();
     return true;
 }
@@ -258,10 +246,12 @@ function isCommentsActivityPage() {
     return location.origin === 'https://www.instagram.com' && location.pathname === '/your_activity/interactions/comments';
 }
 function formatLogItem(item) {
-    if (typeof item === 'string') return item;
+    if (typeof item === 'string')
+        return item;
     try {
         return JSON.stringify(item);
-    } catch  {
+    }
+    catch {
         return String(item);
     }
 }

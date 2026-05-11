@@ -8,8 +8,8 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "node --disable-warning=ExperimentalWarning scripts/build.mjs && node --disable-warning=ExperimentalWarning scripts/build-extension.mjs",
-    "build:extension": "node --disable-warning=ExperimentalWarning scripts/build-extension.mjs",
+    "build": "node scripts/build.mjs && node scripts/build-extension.mjs",
+    "build:extension": "node scripts/build-extension.mjs",
     "check": "npm run build && npm run typecheck && npm test && node scripts/check-syntax.mjs",
     "test": "node --test",
     "typecheck": "tsc --noEmit"
