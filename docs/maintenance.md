@@ -20,7 +20,8 @@ When selectors change:
 
 ## Release Checklist
 
-1. `npm run check`
-2. Review `dist/instagram-comment-activity-deleter.console.js`
-3. Commit source, tests, docs, and generated `dist/` files
-4. Keep repository private
+1. `npm install`
+2. `npm run check`
+3. Review `dist/instagram-comment-activity-deleter.console.js`
+4. Commit source, tests, docs, and generated `dist/` files
+5. Keep repository private

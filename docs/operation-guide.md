@@ -47,4 +47,4 @@ The script stops when:
 
 ## Recovery
 
-If Instagram changes the activity page markup, stop using the generated script and update selectors in `src/deleter.js`. Add or update a fixture in `test/fixtures/` before changing behavior.
+If Instagram changes the activity page markup, stop using the generated script and update selectors in `src/deleter.ts`. Add or update a fixture in `test/fixtures/` before changing behavior.

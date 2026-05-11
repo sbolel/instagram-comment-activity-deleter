@@ -1,14 +1,29 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createInstagramCommentDeleter, InstagramCommentDeletionError } from '../src/deleter.js'
+import { createInstagramCommentDeleter, InstagramCommentDeletionError } from '../src/deleter.ts'
+
+type TestElement = {
+  clicked: number
+  textContent: string
+  click: () => void
+}
+
+type TestRoot = {
+  buttons: TestElement[]
+  checkboxes: TestElement[]
+  deleteButton: TestElement
+  confirmButton: TestElement
+  querySelector: (selector: string) => TestElement | null
+  querySelectorAll: (selector: string) => TestElement[]
+}
 
 test('selects a limited batch in dry-run mode without deleting', async () => {
   const root = createRoot()
-  const logs = []
+  const logs: unknown[][] = []
   const deleter = createInstagramCommentDeleter({
-    root,
+    root: root as unknown as Document,
     logger: createLogger(logs),
-    delay: () => Promise.resolve(),
+    delay: async () => {},
     dryRun: true,
     batchSize: 2,
     maxBatches: 1,
@@ -33,9 +48,9 @@ test('selects a limited batch in dry-run mode without deleting', async () => {
 test('clicks delete and confirmation controls when dry-run is disabled', async () => {
   const root = createRoot()
   const deleter = createInstagramCommentDeleter({
-    root,
+    root: root as unknown as Document,
     logger: createLogger(),
-    delay: () => Promise.resolve(),
+    delay: async () => {},
     dryRun: false,
     batchSize: 1,
     maxBatches: 1,
@@ -52,9 +67,9 @@ test('clicks delete and confirmation controls when dry-run is disabled', async (
 test('throws a clear error when the select button is missing', async () => {
   const root = createRoot({ includeSelectButton: false })
   const deleter = createInstagramCommentDeleter({
-    root,
+    root: root as unknown as Document,
     logger: createLogger(),
-    delay: () => Promise.resolve(),
+    delay: async () => {},
     dryRun: true,
   })
 
@@ -64,13 +79,13 @@ test('throws a clear error when the select button is missing', async () => {
   })
 })
 
-function createLogger(target = []) {
+function createLogger(target: unknown[][] = []) {
   return {
-    info: (...args) => target.push(args),
+    info: (...args: unknown[]) => target.push(args),
   }
 }
 
-function createRoot({ includeSelectButton = true } = {}) {
+function createRoot({ includeSelectButton = true } = {}): TestRoot {
   const buttons = [createElement({ textContent: 'Filters' })]
   if (includeSelectButton) buttons.push(createElement({ textContent: 'Select' }))
 
@@ -96,7 +111,7 @@ function createRoot({ includeSelectButton = true } = {}) {
   }
 }
 
-function createElement({ textContent = '' } = {}) {
+function createElement({ textContent = '' } = {}): TestElement {
   return {
     clicked: 0,
     textContent,

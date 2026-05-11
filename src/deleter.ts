@@ -1,4 +1,56 @@
-export const DEFAULT_OPTIONS = Object.freeze({
+type DelayFunction = (ms: number) => Promise<void>
+
+type Logger = Pick<Console, 'info'>
+
+type DomRoot = Pick<Document, 'querySelector' | 'querySelectorAll'> | Pick<Element, 'querySelector' | 'querySelectorAll'>
+
+type ClickableElement = Element & {
+  click: () => void
+}
+
+type SelectorConfig = {
+  pageButtons: string
+  checkbox: string
+  deleteButton: string
+  confirmButton: string
+}
+
+type NormalizedOptions = {
+  batchSize: number
+  actionDelayMs: number
+  checkboxDelayMs: number
+  selectButtonTimeoutMs: number
+  elementTimeoutMs: number
+  pollIntervalMs: number
+  dryRun: boolean
+  maxBatches: number
+}
+
+export type DeletionStopReason = 'no-comments-found' | 'dry-run-complete' | 'max-batches-reached' | null
+
+export type DeletionStats = {
+  batchesAttempted: number
+  commentsSelected: number
+  dryRun: boolean
+  stoppedBecause: DeletionStopReason
+}
+
+export type InstagramCommentDeleterOptions = Partial<NormalizedOptions> & {
+  selectors?: Partial<SelectorConfig>
+  root?: DomRoot
+  logger?: Logger
+  delay?: DelayFunction
+}
+
+export type InstagramCommentDeleter = {
+  run: () => Promise<DeletionStats>
+  waitForElement: (selector: string, timeoutMs?: number) => Promise<Element>
+  getSelectButton: () => Element | null
+  selectBatch: () => Promise<number>
+  deleteSelectedComments: () => Promise<void>
+}
+
+export const DEFAULT_OPTIONS: Readonly<NormalizedOptions> = Object.freeze({
   batchSize: 3,
   actionDelayMs: 1000,
   checkboxDelayMs: 300,
@@ -9,7 +61,7 @@ export const DEFAULT_OPTIONS = Object.freeze({
   maxBatches: Number.POSITIVE_INFINITY,
 })
 
-const DEFAULT_SELECTORS = Object.freeze({
+const DEFAULT_SELECTORS: Readonly<SelectorConfig> = Object.freeze({
   pageButtons: '[role="button"]',
   checkbox: '[aria-label="Toggle checkbox"]',
   deleteButton: '[aria-label="Delete"]',
@@ -17,14 +69,16 @@ const DEFAULT_SELECTORS = Object.freeze({
 })
 
 export class InstagramCommentDeletionError extends Error {
-  constructor(message, details = {}) {
+  details: Record<string, unknown>
+
+  constructor(message: string, details: Record<string, unknown> = {}) {
     super(message)
     this.name = 'InstagramCommentDeletionError'
     this.details = details
   }
 }
 
-export function createInstagramCommentDeleter(options = {}) {
+export function createInstagramCommentDeleter(options: InstagramCommentDeleterOptions = {}): InstagramCommentDeleter {
   const config = normalizeOptions(options)
   const selectors = { ...DEFAULT_SELECTORS, ...options.selectors }
   const root = options.root ?? globalThis.document
@@ -35,9 +89,9 @@ export function createInstagramCommentDeleter(options = {}) {
     throw new InstagramCommentDeletionError('A DOM document or root element is required')
   }
 
-  const wait = (ms) => delay(ms)
+  const wait = (ms: number) => delay(ms)
 
-  async function waitForElement(selector, timeoutMs = config.elementTimeoutMs) {
+  async function waitForElement(selector: string, timeoutMs = config.elementTimeoutMs): Promise<Element> {
     const startedAt = Date.now()
 
     while (Date.now() - startedAt < timeoutMs) {
@@ -52,7 +106,7 @@ export function createInstagramCommentDeleter(options = {}) {
     })
   }
 
-  async function clickElement(element, label) {
+  async function clickElement(element: ClickableElement | null, label: string): Promise<void> {
     if (!element) {
       throw new InstagramCommentDeletionError(`Missing element: ${label}`)
     }
@@ -61,12 +115,12 @@ export function createInstagramCommentDeleter(options = {}) {
     await wait(config.actionDelayMs)
   }
 
-  function getSelectButton() {
+  function getSelectButton(): Element | null {
     const buttons = Array.from(root.querySelectorAll(selectors.pageButtons))
     return buttons.find((button) => /select/i.test(button.textContent ?? '')) ?? buttons[1] ?? null
   }
 
-  async function waitForSelectButton() {
+  async function waitForSelectButton(): Promise<void> {
     const startedAt = Date.now()
 
     while (Date.now() - startedAt < config.selectButtonTimeoutMs) {
@@ -79,33 +133,33 @@ export function createInstagramCommentDeleter(options = {}) {
     })
   }
 
-  async function selectBatch() {
+  async function selectBatch(): Promise<number> {
     const checkboxes = Array.from(root.querySelectorAll(selectors.checkbox))
     const selected = checkboxes.slice(0, config.batchSize)
 
     for (const checkbox of selected) {
-      checkbox.click()
+      asClickable(checkbox, 'comment checkbox')?.click()
       await wait(config.checkboxDelayMs)
     }
 
     return selected.length
   }
 
-  async function deleteSelectedComments() {
+  async function deleteSelectedComments(): Promise<void> {
     if (config.dryRun) {
       logger.info('[dry-run] Skipping delete confirmation flow')
       return
     }
 
-    const deleteButton = await waitForElement(selectors.deleteButton)
+    const deleteButton = asClickable(await waitForElement(selectors.deleteButton), 'delete button')
     await clickElement(deleteButton, 'delete button')
 
-    const confirmButton = await waitForElement(selectors.confirmButton)
+    const confirmButton = asClickable(await waitForElement(selectors.confirmButton), 'confirm delete button')
     await clickElement(confirmButton, 'confirm delete button')
   }
 
-  async function run() {
-    const stats = {
+  async function run(): Promise<DeletionStats> {
+    const stats: DeletionStats = {
       batchesAttempted: 0,
       commentsSelected: 0,
       dryRun: config.dryRun,
@@ -118,7 +172,7 @@ export function createInstagramCommentDeleter(options = {}) {
         throw new InstagramCommentDeletionError('Select button not found')
       }
 
-      await clickElement(selectButton, 'select button')
+      await clickElement(asClickable(selectButton, 'select button'), 'select button')
 
       const selectedCount = await selectBatch()
       if (selectedCount === 0) {
@@ -158,10 +212,10 @@ export function createInstagramCommentDeleter(options = {}) {
   }
 }
 
-function normalizeOptions(options) {
+function normalizeOptions(options: InstagramCommentDeleterOptions): NormalizedOptions {
   const config = { ...DEFAULT_OPTIONS, ...options }
 
-  for (const key of ['batchSize', 'actionDelayMs', 'checkboxDelayMs', 'elementTimeoutMs', 'pollIntervalMs']) {
+  for (const key of ['batchSize', 'actionDelayMs', 'checkboxDelayMs', 'elementTimeoutMs', 'pollIntervalMs'] as const) {
     if (!Number.isFinite(config[key]) || config[key] < 0) {
       throw new InstagramCommentDeletionError(`Invalid numeric option: ${key}`)
     }
@@ -182,4 +236,14 @@ function normalizeOptions(options) {
   config.maxBatches = Math.floor(config.maxBatches)
 
   return config
+}
+
+function asClickable(element: Element | null, label: string): ClickableElement | null {
+  if (!element) return null
+
+  if (typeof (element as Partial<ClickableElement>).click !== 'function') {
+    throw new InstagramCommentDeletionError(`Element is not clickable: ${label}`)
+  }
+
+  return element as ClickableElement
 }

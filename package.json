@@ -5,9 +5,10 @@
   "description": "Private browser automation utility for deleting your own Instagram comment activity in controlled batches.",
   "type": "module",
   "scripts": {
-    "build": "node scripts/build.mjs",
-    "check": "node --test && node scripts/check-syntax.mjs && node scripts/build.mjs",
-    "test": "node --test"
+    "build": "node --disable-warning=ExperimentalWarning scripts/build.mjs",
+    "check": "npm run typecheck && npm test && node scripts/check-syntax.mjs && npm run build",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "instagram",
@@ -16,5 +17,9 @@
     "automation"
   ],
   "author": "Sinan Bolel",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "typescript": "^5.8.3"
+  }
 }

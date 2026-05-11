@@ -28,6 +28,7 @@ This is destructive automation. Review the generated script before running it.
 Verify the repo:
 
 ```sh
+npm install
 npm run check
 ```
 
@@ -68,12 +69,12 @@ Common options:
 
 ## Development
 
-Source lives in `src/`.
+TypeScript source lives in `src/`.
 
-- `src/deleter.js`: testable DOM automation engine.
-- `src/console-entry.js`: browser global entrypoint for generated scripts.
+- `src/deleter.ts`: testable DOM automation engine.
+- `src/console-entry.ts`: browser global entrypoint for generated scripts.
 - `scripts/build.mjs`: creates browser-ready files in `dist/`.
-- `test/`: Node test coverage using dependency-free DOM fakes.
+- `test/`: Node test coverage using lightweight DOM fakes.
 
 Run all checks:
 
@@ -81,4 +82,4 @@ Run all checks:
 npm run check
 ```
 
-The project intentionally has no runtime or development dependencies.
+The generated browser scripts have no runtime dependencies. Development uses TypeScript for strict type checking.

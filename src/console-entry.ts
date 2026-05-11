@@ -1,6 +1,13 @@
-import { createInstagramCommentDeleter } from './deleter.js'
+import { createInstagramCommentDeleter, type InstagramCommentDeleterOptions } from './deleter.ts'
 
-async function run(options = {}) {
+declare global {
+  var InstagramCommentActivityDeleter: {
+    create: typeof createInstagramCommentDeleter
+    run: typeof run
+  }
+}
+
+async function run(options: InstagramCommentDeleterOptions = {}) {
   const deleter = createInstagramCommentDeleter(options)
   return deleter.run()
 }
