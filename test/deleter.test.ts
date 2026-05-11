@@ -5,11 +5,14 @@ import { createInstagramCommentDeleter, InstagramCommentDeletionError } from '..
 type TestElement = {
   clicked: number
   textContent: string
+  tagName: string
   click: () => void
+  getAttribute: (name: string) => string | null
 }
 
 type TestRoot = {
-  buttons: TestElement[]
+  roleButtons: TestElement[]
+  actionCandidates: TestElement[]
   checkboxes: TestElement[]
   deleteButton: TestElement
   confirmButton: TestElement
@@ -43,6 +46,23 @@ test('selects a limited batch in dry-run mode without deleting', async () => {
   )
   assert.equal(root.deleteButton.clicked, 0)
   assert.equal(logs[0][0], '[dry-run] Skipping delete confirmation flow')
+})
+
+test('finds the current Instagram select control when it is a clickable div', async () => {
+  const root = createRoot({ includeSelectButton: false, includeClickableSelectDiv: true })
+  const deleter = createInstagramCommentDeleter({
+    root: root as unknown as Document,
+    logger: createLogger(),
+    delay: async () => {},
+    dryRun: true,
+    batchSize: 1,
+    maxBatches: 1,
+  })
+
+  const stats = await deleter.run()
+
+  assert.equal(stats.commentsSelected, 1)
+  assert.equal(root.actionCandidates[1].clicked, 1)
 })
 
 test('clicks delete and confirmation controls when dry-run is disabled', async () => {
@@ -85,16 +105,22 @@ function createLogger(target: unknown[][] = []) {
   }
 }
 
-function createRoot({ includeSelectButton = true } = {}): TestRoot {
-  const buttons = [createElement({ textContent: 'Filters' })]
-  if (includeSelectButton) buttons.push(createElement({ textContent: 'Select' }))
+function createRoot({ includeSelectButton = true, includeClickableSelectDiv = false } = {}): TestRoot {
+  const roleButtons = [createElement({ textContent: 'Filters', role: 'button' })]
+  if (includeSelectButton) roleButtons.push(createElement({ textContent: 'Select', role: 'button' }))
+
+  const actionCandidates = [...roleButtons]
+  if (includeClickableSelectDiv) {
+    actionCandidates.push(createElement({ tagName: 'DIV', textContent: 'Select' }))
+  }
 
   const checkboxes = Array.from({ length: 4 }, () => createElement())
   const deleteButton = createElement()
   const confirmButton = createElement()
 
   return {
-    buttons,
+    roleButtons,
+    actionCandidates,
     checkboxes,
     deleteButton,
     confirmButton,
@@ -104,19 +130,33 @@ function createRoot({ includeSelectButton = true } = {}): TestRoot {
       return null
     },
     querySelectorAll(selector) {
-      if (selector === '[role="button"]') return buttons
+      if (selector === '[role="button"]') return roleButtons
+      if (selector === 'button,[role="button"],div') return actionCandidates
       if (selector === '[aria-label="Toggle checkbox"]') return checkboxes
       return []
     },
   }
 }
 
-function createElement({ textContent = '' } = {}): TestElement {
+function createElement({
+  textContent = '',
+  tagName = 'BUTTON',
+  role = null,
+}: {
+  textContent?: string
+  tagName?: string
+  role?: string | null
+} = {}): TestElement {
   return {
     clicked: 0,
+    tagName,
     textContent,
     click() {
       this.clicked += 1
+    },
+    getAttribute(name: string) {
+      if (name === 'role') return role
+      return null
     },
   }
 }

@@ -62,7 +62,7 @@ export const DEFAULT_OPTIONS: Readonly<NormalizedOptions> = Object.freeze({
 })
 
 const DEFAULT_SELECTORS: Readonly<SelectorConfig> = Object.freeze({
-  pageButtons: '[role="button"]',
+  pageButtons: 'button,[role="button"],div',
   checkbox: '[aria-label="Toggle checkbox"]',
   deleteButton: '[aria-label="Delete"]',
   confirmButton: 'button[tabindex="0"]',
@@ -117,7 +117,7 @@ export function createInstagramCommentDeleter(options: InstagramCommentDeleterOp
 
   function getSelectButton(): Element | null {
     const buttons = Array.from(root.querySelectorAll(selectors.pageButtons))
-    return buttons.find((button) => /select/i.test(button.textContent ?? '')) ?? buttons[1] ?? null
+    return buttons.find((button) => getElementLabel(button) === 'Select') ?? null
   }
 
   async function waitForSelectButton(): Promise<void> {
@@ -246,4 +246,8 @@ function asClickable(element: Element | null, label: string): ClickableElement |
   }
 
   return element as ClickableElement
+}
+
+function getElementLabel(element: Element): string {
+  return (element.getAttribute('aria-label') ?? element.textContent ?? '').trim()
 }
