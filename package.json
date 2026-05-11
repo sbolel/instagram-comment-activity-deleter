@@ -1,0 +1,20 @@
+{
+  "name": "instagram-comment-activity-deleter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Private browser automation utility for deleting your own Instagram comment activity in controlled batches.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node --test && node scripts/check-syntax.mjs && node scripts/build.mjs",
+    "test": "node --test"
+  },
+  "keywords": [
+    "instagram",
+    "browser-console",
+    "privacy",
+    "automation"
+  ],
+  "author": "Sinan Bolel",
+  "license": "UNLICENSED"
+}
