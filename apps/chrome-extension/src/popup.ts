@@ -28,6 +28,7 @@ const deleteConfirm = requireElement<HTMLElement>('deleteConfirm')
 const confirmDelete = requireElement<HTMLInputElement>('confirmDelete')
 const runButton = requireElement<HTMLButtonElement>('runButton')
 const resetButton = requireElement<HTMLButtonElement>('resetButton')
+const openPageButton = requireElement<HTMLButtonElement>('openPageButton')
 
 let activeTabId: number | null = null
 
@@ -50,6 +51,7 @@ function bindControls(): void {
     run()
   })
   resetButton.addEventListener('click', resetSelection)
+  openPageButton.addEventListener('click', openCommentsPage)
 }
 
 async function refreshActiveTab(): Promise<void> {
@@ -60,12 +62,13 @@ async function refreshActiveTab(): Promise<void> {
     activeTabId = tab?.id ?? null
 
     if (!tab?.url || !isSupportedUrl(tab.url) || activeTabId === null) {
-      setBlocked(`Open ${COMMENTS_ACTIVITY_URL}`)
+      setBlocked('Open the comments activity page to enable controls.')
       return
     }
 
     pageStatus.textContent = 'Ready'
     pageStatus.className = 'badge ready'
+    openPageButton.hidden = true
     controls.querySelectorAll('input,button').forEach((element) => {
       ;(element as HTMLInputElement | HTMLButtonElement).disabled = false
     })
@@ -154,9 +157,23 @@ function setBlocked(message: string): void {
   pageStatus.textContent = 'Open page'
   pageStatus.className = 'badge blocked'
   output.textContent = message
+  openPageButton.hidden = false
+  openPageButton.disabled = false
   controls.querySelectorAll('input,button').forEach((element) => {
     ;(element as HTMLInputElement | HTMLButtonElement).disabled = true
   })
+}
+
+async function openCommentsPage(): Promise<void> {
+  openPageButton.disabled = true
+
+  try {
+    await chromeCall<chrome.tabs.Tab>((resolve) => chrome.tabs.create({ url: COMMENTS_ACTIVITY_URL }, resolve))
+    window.close()
+  } catch (error) {
+    output.textContent = getErrorMessage(error)
+    openPageButton.disabled = false
+  }
 }
 
 function setBusy(isBusy: boolean): void {
