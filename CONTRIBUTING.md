@@ -15,10 +15,19 @@ Selector changes must include a test that explains the Instagram markup assumpti
 
 ## Commit Style
 
-Use conventional commit messages, for example:
+Use Conventional Commit messages. Semantic Release uses these messages to calculate the next SemVer version after a merge to `main`.
 
 ```text
 feat: add dry-run batch limit
 fix: update delete confirmation selector
 docs: clarify recovery workflow
 ```
+
+Release impact:
+
+- `fix:` and `perf:` create patch releases.
+- `feat:` creates minor releases.
+- `BREAKING CHANGE:` footers, or commits with `!` after the type or scope, create major releases.
+- `docs:`, `test:`, `refactor:`, `build:`, `ci:`, `chore:`, and `style:` do not create releases by default unless they include a breaking-change marker.
+
+Keep PR titles Conventional Commit compliant because squash merges use the PR title as the release commit subject.

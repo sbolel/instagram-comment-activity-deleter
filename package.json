@@ -1,6 +1,6 @@
 {
   "name": "instagram-comment-activity-deleter",
-  "version": "0.1.0",
+  "version": "0.0.0-semantic-release",
   "private": true,
   "description": "Private browser automation utility for deleting your own Instagram comment activity in controlled batches.",
   "type": "module",
@@ -11,6 +11,8 @@
     "build": "node scripts/build.mjs && node scripts/build-extension.mjs",
     "build:extension": "node scripts/build-extension.mjs",
     "check": "npm run build && npm run typecheck && npm test && node scripts/check-syntax.mjs",
+    "commitlint": "commitlint --verbose",
+    "release": "semantic-release",
     "test": "node --test",
     "typecheck": "tsc --noEmit"
   },
@@ -23,7 +25,14 @@
   "author": "Sinan Bolel",
   "license": "UNLICENSED",
   "devDependencies": {
+    "@commitlint/cli": "^21.0.0",
+    "@commitlint/config-conventional": "^21.0.0",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/github": "^12.0.8",
+    "@semantic-release/release-notes-generator": "^14.1.1",
     "@types/node": "^22.15.17",
+    "conventional-changelog-conventionalcommits": "^9.3.1",
+    "semantic-release": "^25.0.3",
     "typescript": "^5.8.3"
   }
 }
