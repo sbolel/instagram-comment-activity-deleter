@@ -123,3 +123,12 @@ npm run check
 ```
 
 The generated browser scripts have no runtime dependencies. Development uses TypeScript for strict type checking.
+
+## Releases
+
+Releases are automated with Semantic Release on pushes to `main`. The repository uses Conventional Commits to calculate SemVer versions and create GitHub releases.
+
+- `package.json` intentionally stays at `0.0.0-semantic-release`.
+- Release tags use `v${version}`.
+- Release assets include the console script, userscript, and unpacked Chrome extension files.
+- PR titles and commit messages must follow Conventional Commits.
