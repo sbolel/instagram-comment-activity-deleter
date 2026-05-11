@@ -20,6 +20,7 @@ declare namespace chrome {
     }
 
     function query(queryInfo: { active: boolean; currentWindow: boolean }, callback: (tabs: Tab[]) => void): void
+    function create(createProperties: { url: string }, callback: (tab: Tab) => void): void
     function sendMessage(tabId: number, message: unknown, callback: (response: unknown) => void): void
   }
 

@@ -17,3 +17,13 @@ test('Chrome extension popup avoids inline script', async () => {
   assert.doesNotMatch(popup, /<script(?![^>]*\ssrc=)[^>]*>/)
   assert.doesNotMatch(popup, /\son\w+=/)
 })
+
+test('Chrome extension popup includes a blocked-state open page action', async () => {
+  const popup = await readFile('apps/chrome-extension/public/popup.html', 'utf8')
+  const styles = await readFile('apps/chrome-extension/public/popup.css', 'utf8')
+
+  assert.match(popup, /id="openPageButton"/)
+  assert.match(popup, /Open comments page/)
+  assert.match(styles, /overflow-wrap:\s*anywhere/)
+  assert.match(styles, /width:\s*320px/)
+})

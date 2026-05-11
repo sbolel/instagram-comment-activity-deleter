@@ -15,6 +15,7 @@ const deleteConfirm = requireElement('deleteConfirm');
 const confirmDelete = requireElement('confirmDelete');
 const runButton = requireElement('runButton');
 const resetButton = requireElement('resetButton');
+const openPageButton = requireElement('openPageButton');
 let activeTabId = null;
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
@@ -34,17 +35,19 @@ function bindControls() {
         run();
     });
     resetButton.addEventListener('click', resetSelection);
+    openPageButton.addEventListener('click', openCommentsPage);
 }
 async function refreshActiveTab() {
     try {
         const [tab] = await chromeCall((resolve) => chrome.tabs.query({ active: true, currentWindow: true }, resolve));
         activeTabId = tab?.id ?? null;
         if (!tab?.url || !isSupportedUrl(tab.url) || activeTabId === null) {
-            setBlocked(`Open ${COMMENTS_ACTIVITY_URL}`);
+            setBlocked('Open the comments activity page to enable controls.');
             return;
         }
         pageStatus.textContent = 'Ready';
         pageStatus.className = 'badge ready';
+        openPageButton.hidden = true;
         controls.querySelectorAll('input,button').forEach((element) => {
             ;
             element.disabled = false;
@@ -122,10 +125,23 @@ function setBlocked(message) {
     pageStatus.textContent = 'Open page';
     pageStatus.className = 'badge blocked';
     output.textContent = message;
+    openPageButton.hidden = false;
+    openPageButton.disabled = false;
     controls.querySelectorAll('input,button').forEach((element) => {
         ;
         element.disabled = true;
     });
+}
+async function openCommentsPage() {
+    openPageButton.disabled = true;
+    try {
+        await chromeCall((resolve) => chrome.tabs.create({ url: COMMENTS_ACTIVITY_URL }, resolve));
+        window.close();
+    }
+    catch (error) {
+        output.textContent = getErrorMessage(error);
+        openPageButton.disabled = false;
+    }
 }
 function setBusy(isBusy) {
     runButton.disabled = isBusy || (!dryRun.checked && confirmDelete.value !== 'DELETE');
