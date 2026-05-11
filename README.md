@@ -62,7 +62,20 @@ Build it:
 npm run build:extension
 ```
 
-Load `apps/chrome-extension/dist` as an unpacked extension from `chrome://extensions`. The extension uses only `activeTab` and `scripting`, injects the content script after you open the popup, and enables itself only on:
+Load the generated extension folder as an unpacked extension:
+
+1. Open your Chromium-based browser's extensions page:
+   - Chrome: `chrome://extensions`
+   - Edge: `edge://extensions`
+   - Brave: `brave://extensions`
+2. Enable Developer Mode.
+3. Choose "Load unpacked".
+4. Select the generated folder: `apps/chrome-extension/dist`.
+5. Pin the extension from the browser toolbar if you want quick access.
+
+After rebuilding, return to the extensions page and choose the extension's reload button so the browser picks up the new files.
+
+The extension uses only `activeTab` and `scripting`, injects the content script after you open the popup, and enables itself only on:
 
 ```text
 https://www.instagram.com/your_activity/interactions/comments

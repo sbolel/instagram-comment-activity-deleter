@@ -10,12 +10,37 @@ npm run build:extension
 
 The unpacked extension is generated at `apps/chrome-extension/dist`.
 
-## Load
+## Load In A Chromium Browser
 
-1. Open `chrome://extensions`.
+Build first so `apps/chrome-extension/dist` exists.
+
+1. Open the extensions page for your browser:
+   - Chrome: `chrome://extensions`
+   - Edge: `edge://extensions`
+   - Brave: `brave://extensions`
+   - Arc or other Chromium browsers: open the browser's extension management page.
 2. Enable Developer Mode.
 3. Choose "Load unpacked".
-4. Select `apps/chrome-extension/dist`.
+4. Select this exact generated folder from the repo:
+
+   ```text
+   apps/chrome-extension/dist
+   ```
+
+5. Confirm that "Instagram Comment Activity Deleter" appears in the extensions list.
+6. Pin it from the browser toolbar if you want direct access.
+
+## Reload After Changes
+
+After rebuilding the extension:
+
+```sh
+npm run build:extension
+```
+
+Return to the browser extensions page and click the reload button on "Instagram Comment Activity Deleter". Reload the Instagram tab too if it was already open.
+
+If the browser says the manifest cannot be read, make sure you selected `apps/chrome-extension/dist`, not `apps/chrome-extension` or `apps/chrome-extension/src`.
 
 ## Use
 
