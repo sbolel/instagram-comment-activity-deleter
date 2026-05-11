@@ -14,7 +14,7 @@ const DEFAULT_OPTIONS = Object.freeze({
     maxBatches: Number.POSITIVE_INFINITY
 });
 const DEFAULT_SELECTORS = Object.freeze({
-    pageButtons: '[role="button"]',
+    pageButtons: 'button,[role="button"],div',
     checkbox: '[aria-label="Toggle checkbox"]',
     deleteButton: '[aria-label="Delete"]',
     confirmButton: 'button[tabindex="0"]'
@@ -61,7 +61,7 @@ function createInstagramCommentDeleter(options = {}) {
     }
     function getSelectButton() {
         const buttons = Array.from(root.querySelectorAll(selectors.pageButtons));
-        return buttons.find((button)=>/select/i.test(button.textContent ?? '')) ?? buttons[1] ?? null;
+        return buttons.find((button)=>getElementLabel(button) === 'Select') ?? null;
     }
     async function waitForSelectButton() {
         const startedAt = Date.now();
@@ -167,6 +167,9 @@ function asClickable(element, label) {
         throw new InstagramCommentDeletionError(`Element is not clickable: ${label}`);
     }
     return element;
+}
+function getElementLabel(element) {
+    return (element.getAttribute('aria-label') ?? element.textContent ?? '').trim();
 }
 
 
