@@ -11,5 +11,5 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.mjs"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.mjs", "apps/chrome-extension/src/**/*.ts", "apps/chrome-extension/types/**/*.d.ts"]
 }

@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { stripTypeScriptTypes } from 'node:module'
+import { transpileTypeScript } from './transpile-typescript.mjs'
 
 const banner = `/**
  * Instagram Comment Activity Deleter
@@ -9,7 +9,7 @@ const banner = `/**
 await mkdir('dist', { recursive: true })
 
 const source = await readFile('src/deleter.ts', 'utf8')
-const strippedSource = stripTypeScriptTypes(source, { mode: 'transform' })
+const strippedSource = transpileTypeScript(source, 'src/deleter.ts')
 const browserSource = strippedSource
   .replace('export const DEFAULT_OPTIONS', 'const DEFAULT_OPTIONS')
   .replace('export class InstagramCommentDeletionError', 'class InstagramCommentDeletionError')

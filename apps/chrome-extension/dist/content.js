@@ -1,15 +1,6 @@
-// ==UserScript==
-// @name         Instagram Comment Activity Deleter
-// @namespace    https://github.com/sbolel/instagram-comment-activity-deleter
-// @version      0.1.0
-// @description  Private utility for deleting your own Instagram comment activity in controlled batches.
-// @match        https://www.instagram.com/your_activity/interactions/comments*
-// @grant        none
-// ==/UserScript==
-
 /**
- * Instagram Comment Activity Deleter
- * Private browser automation utility. Review before running.
+ * Instagram Comment Activity Deleter extension content script.
+ * Generated from TypeScript. Do not edit directly.
  */
 ;(() => {
 const DEFAULT_OPTIONS = Object.freeze({
@@ -174,18 +165,95 @@ function getElementLabel(element) {
 }
 
 
-async function run(options = {}) {
-  const deleter = createInstagramCommentDeleter(options)
-  return deleter.run()
+const state = (globalThis.__ICAD_EXTENSION__ ??= {
+    installed: false,
+    running: false,
+    lastStats: null,
+    lastError: null,
+});
+if (!state.installed) {
+    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+        handleMessage(message).then(sendResponse);
+        return true;
+    });
+    state.installed = true;
+}
+async function handleMessage(message) {
+    try {
+        if (!isCommentsActivityPage()) {
+            throw new InstagramCommentDeletionError('Open the Instagram comments activity page before running.');
+        }
+        if (message.command === 'status') {
+            return {
+                ok: true,
+                status: {
+                    running: state.running,
+                    lastStats: state.lastStats,
+                    lastError: state.lastError,
+                },
+            };
+        }
+        if (message.command === 'reset') {
+            return { ok: true, reset: resetSelection() };
+        }
+        if (message.command === 'run') {
+            return await runDeletion(message.options);
+        }
+        throw new InstagramCommentDeletionError('Unsupported extension command');
+    }
+    catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        state.lastError = message;
+        return {
+            ok: false,
+            error: message,
+            details: error instanceof InstagramCommentDeletionError ? error.details : undefined,
+        };
+    }
+}
+async function runDeletion(options) {
+    if (state.running) {
+        throw new InstagramCommentDeletionError('A deletion run is already in progress.');
+    }
+    state.running = true;
+    state.lastError = null;
+    const logs = [];
+    try {
+        const deleter = createInstagramCommentDeleter({
+            ...options,
+            logger: {
+                info: (...items) => {
+                    logs.push(items.map(formatLogItem).join(' '));
+                },
+            },
+        });
+        const stats = await deleter.run();
+        state.lastStats = stats;
+        return { ok: true, stats, logs };
+    }
+    finally {
+        state.running = false;
+    }
+}
+function resetSelection() {
+    const cancelButton = Array.from(document.querySelectorAll('button,[role="button"],div')).find((element) => (element.getAttribute('aria-label') ?? element.textContent ?? '').trim() === 'Cancel');
+    if (!cancelButton?.click)
+        return false;
+    cancelButton.click();
+    return true;
+}
+function isCommentsActivityPage() {
+    return location.origin === 'https://www.instagram.com' && location.pathname === '/your_activity/interactions/comments';
+}
+function formatLogItem(item) {
+    if (typeof item === 'string')
+        return item;
+    try {
+        return JSON.stringify(item);
+    }
+    catch {
+        return String(item);
+    }
 }
 
-globalThis.InstagramCommentActivityDeleter = {
-  create: createInstagramCommentDeleter,
-  run,
-  InstagramCommentDeletionError,
-}
-
-console.info(
-  'InstagramCommentActivityDeleter loaded. Start with: await InstagramCommentActivityDeleter.run({ dryRun: true, maxBatches: 1 })',
-)
 })()

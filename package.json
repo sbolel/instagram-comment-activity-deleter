@@ -4,9 +4,13 @@
   "private": true,
   "description": "Private browser automation utility for deleting your own Instagram comment activity in controlled batches.",
   "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
-    "build": "node --disable-warning=ExperimentalWarning scripts/build.mjs",
-    "check": "npm run typecheck && npm test && node scripts/check-syntax.mjs && npm run build",
+    "build": "node scripts/build.mjs && node scripts/build-extension.mjs",
+    "build:extension": "node scripts/build-extension.mjs",
+    "check": "npm run build && npm run typecheck && npm test && node scripts/check-syntax.mjs",
     "test": "node --test",
     "typecheck": "tsc --noEmit"
   },

@@ -38,6 +38,12 @@ Build the browser-ready script:
 npm run build
 ```
 
+The build creates:
+
+- `dist/instagram-comment-activity-deleter.console.js`
+- `dist/instagram-comment-activity-deleter.user.js`
+- `apps/chrome-extension/dist/`
+
 Open Instagram's comments activity page:
 
 ```text
@@ -45,6 +51,37 @@ https://www.instagram.com/your_activity/interactions/comments
 ```
 
 Paste the generated console script from `dist/instagram-comment-activity-deleter.console.js` into the browser console.
+
+## Chrome Extension
+
+The repo includes a Manifest V3 extension workspace at `apps/chrome-extension`.
+
+Build it:
+
+```sh
+npm run build:extension
+```
+
+Load the generated extension folder as an unpacked extension:
+
+1. Open your Chromium-based browser's extensions page:
+   - Chrome: `chrome://extensions`
+   - Edge: `edge://extensions`
+   - Brave: `brave://extensions`
+2. Enable Developer Mode.
+3. Choose "Load unpacked".
+4. Select the generated folder: `apps/chrome-extension/dist`.
+5. Pin the extension from the browser toolbar if you want quick access.
+
+After rebuilding, return to the extensions page and choose the extension's reload button so the browser picks up the new files.
+
+The extension uses only `activeTab` and `scripting`, injects the content script after you open the popup, and enables itself only on:
+
+```text
+https://www.instagram.com/your_activity/interactions/comments
+```
+
+Dry run is enabled by default. To delete comments, turn off dry run and type `DELETE` in the confirmation field.
 
 ## Runtime Options
 
@@ -73,7 +110,10 @@ TypeScript source lives in `src/`.
 
 - `src/deleter.ts`: testable DOM automation engine.
 - `src/console-entry.ts`: browser global entrypoint for generated scripts.
+- `apps/chrome-extension/`: Manifest V3 extension workspace.
 - `scripts/build.mjs`: creates browser-ready files in `dist/`.
+- `scripts/build-extension.mjs`: creates unpacked extension files in `apps/chrome-extension/dist/`.
+- `scripts/transpile-typescript.mjs`: stable TypeScript compiler-based transform used by the build scripts.
 - `test/`: Node test coverage using lightweight DOM fakes.
 
 Run all checks:

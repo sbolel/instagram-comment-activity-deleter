@@ -1,0 +1,11 @@
+{
+  "name": "@instagram-comment-activity-deleter/chrome-extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Manifest V3 Chrome extension wrapper for Instagram Comment Activity Deleter.",
+  "scripts": {
+    "build": "node ../../scripts/build-extension.mjs",
+    "check": "node --check dist/content.js && node --check dist/popup.js"
+  }
+}

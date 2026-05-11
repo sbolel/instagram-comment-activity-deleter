@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Instagram Comment Activity Deleter",
+  "version": "0.1.0",
+  "description": "Dry-run and delete your own Instagram comment activity in controlled batches.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Instagram Comment Activity Deleter"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ]
+}
