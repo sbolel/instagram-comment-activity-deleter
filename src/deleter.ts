@@ -12,6 +12,7 @@ type SelectorConfig = {
   pageButtons: string
   checkbox: string
   deleteButton: string
+  deleteButtonCandidates: string
   confirmButton: string
 }
 
@@ -65,6 +66,7 @@ const DEFAULT_SELECTORS: Readonly<SelectorConfig> = Object.freeze({
   pageButtons: 'button,[role="button"],div',
   checkbox: '[aria-label="Toggle checkbox"]',
   deleteButton: '[aria-label="Delete"]',
+  deleteButtonCandidates: 'button,[role="button"],[tabindex],div',
   confirmButton: 'button[tabindex="0"]',
 })
 
@@ -103,6 +105,29 @@ export function createInstagramCommentDeleter(options: InstagramCommentDeleterOp
     throw new InstagramCommentDeletionError(`Element not found: ${selector}`, {
       selector,
       timeoutMs,
+    })
+  }
+
+  async function waitForDeleteButton(): Promise<Element> {
+    const startedAt = Date.now()
+
+    while (Date.now() - startedAt < config.elementTimeoutMs) {
+      const labelledDeleteButton = root.querySelector(selectors.deleteButton)
+      if (labelledDeleteButton) return labelledDeleteButton
+
+      const textDeleteButton = Array.from(root.querySelectorAll(selectors.deleteButtonCandidates)).find(
+        (element) => getElementLabel(element) === 'Delete',
+      )
+      if (textDeleteButton) return textDeleteButton
+
+      await wait(config.pollIntervalMs)
+    }
+
+    throw new InstagramCommentDeletionError('Delete button not found', {
+      selector: selectors.deleteButton,
+      fallbackSelector: selectors.deleteButtonCandidates,
+      fallbackLabel: 'Delete',
+      timeoutMs: config.elementTimeoutMs,
     })
   }
 
@@ -151,7 +176,7 @@ export function createInstagramCommentDeleter(options: InstagramCommentDeleterOp
       return
     }
 
-    const deleteButton = asClickable(await waitForElement(selectors.deleteButton), 'delete button')
+    const deleteButton = asClickable(await waitForDeleteButton(), 'delete button')
     await clickElement(deleteButton, 'delete button')
 
     const confirmButton = asClickable(await waitForElement(selectors.confirmButton), 'confirm delete button')
