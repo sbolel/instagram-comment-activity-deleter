@@ -108,17 +108,12 @@ export function createInstagramCommentDeleter(options: InstagramCommentDeleterOp
     })
   }
 
-  async function waitForDeleteButton(): Promise<Element> {
+  async function waitForDeleteButton(excludedElement: Element | null = null): Promise<Element> {
     const startedAt = Date.now()
 
     while (Date.now() - startedAt < config.elementTimeoutMs) {
-      const labelledDeleteButton = root.querySelector(selectors.deleteButton)
-      if (labelledDeleteButton) return labelledDeleteButton
-
-      const textDeleteButton = Array.from(root.querySelectorAll(selectors.deleteButtonCandidates)).find(
-        (element) => getElementLabel(element) === 'Delete',
-      )
-      if (textDeleteButton) return textDeleteButton
+      const deleteButton = chooseDeleteButtonCandidate(excludedElement)
+      if (deleteButton) return deleteButton
 
       await wait(config.pollIntervalMs)
     }
@@ -127,6 +122,26 @@ export function createInstagramCommentDeleter(options: InstagramCommentDeleterOp
       selector: selectors.deleteButton,
       fallbackSelector: selectors.deleteButtonCandidates,
       fallbackLabel: 'Delete',
+      timeoutMs: config.elementTimeoutMs,
+    })
+  }
+
+  async function waitForConfirmDeleteButton(excludedElement: Element): Promise<Element> {
+    const startedAt = Date.now()
+
+    while (Date.now() - startedAt < config.elementTimeoutMs) {
+      const deleteButton = chooseDeleteButtonCandidate(excludedElement)
+      if (deleteButton) return deleteButton
+
+      const confirmButton = root.querySelector(selectors.confirmButton)
+      if (confirmButton) return confirmButton
+
+      await wait(config.pollIntervalMs)
+    }
+
+    throw new InstagramCommentDeletionError('Confirm delete button not found', {
+      deleteSelector: selectors.deleteButton,
+      confirmSelector: selectors.confirmButton,
       timeoutMs: config.elementTimeoutMs,
     })
   }
@@ -176,10 +191,11 @@ export function createInstagramCommentDeleter(options: InstagramCommentDeleterOp
       return
     }
 
-    const deleteButton = asClickable(await waitForDeleteButton(), 'delete button')
+    const deleteElement = await waitForDeleteButton()
+    const deleteButton = asClickable(deleteElement, 'delete button')
     await clickElement(deleteButton, 'delete button')
 
-    const confirmButton = asClickable(await waitForElement(selectors.confirmButton), 'confirm delete button')
+    const confirmButton = asClickable(await waitForConfirmDeleteButton(deleteElement), 'confirm delete button')
     await clickElement(confirmButton, 'confirm delete button')
   }
 
@@ -235,6 +251,14 @@ export function createInstagramCommentDeleter(options: InstagramCommentDeleterOp
     selectBatch,
     deleteSelectedComments,
   }
+
+  function chooseDeleteButtonCandidate(excludedElement: Element | null): Element | null {
+    const labelledDeleteButtons = Array.from(root.querySelectorAll(selectors.deleteButton))
+    const textDeleteButtons = Array.from(root.querySelectorAll(selectors.deleteButtonCandidates)).filter(
+      (element) => getElementLabel(element) === 'Delete',
+    )
+    return chooseClickableCandidate([...labelledDeleteButtons, ...textDeleteButtons], excludedElement)
+  }
 }
 
 function normalizeOptions(options: InstagramCommentDeleterOptions): NormalizedOptions {
@@ -275,4 +299,25 @@ function asClickable(element: Element | null, label: string): ClickableElement |
 
 function getElementLabel(element: Element): string {
   return (element.getAttribute('aria-label') ?? element.textContent ?? '').trim()
+}
+
+function chooseClickableCandidate(elements: Element[], excludedElement: Element | null): Element | null {
+  const uniqueElements = Array.from(new Set(elements)).filter((element) => element !== excludedElement)
+  if (uniqueElements.length === 0) return null
+
+  const interactiveElements = uniqueElements.filter(hasPointerEvents)
+  return interactiveElements[interactiveElements.length - 1] ?? null
+}
+
+function hasPointerEvents(element: Element): boolean {
+  const inlineStyle = element.getAttribute('style')
+  if (inlineStyle && /pointer-events\s*:\s*none/i.test(inlineStyle)) return false
+  if (inlineStyle && /pointer-events\s*:\s*auto/i.test(inlineStyle)) return true
+
+  const getComputedStyle = globalThis.getComputedStyle
+  if (typeof getComputedStyle === 'function' && element instanceof globalThis.Element) {
+    return getComputedStyle(element).pointerEvents !== 'none'
+  }
+
+  return true
 }

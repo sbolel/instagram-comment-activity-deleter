@@ -16,6 +16,7 @@ type TestRoot = {
   checkboxes: TestElement[]
   deleteButton: TestElement | null
   textDeleteButton: TestElement | null
+  nestedConfirmDeleteButton: TestElement | null
   deleteCommentButton: TestElement
   confirmButton: TestElement
   querySelector: (selector: string) => TestElement | null
@@ -105,6 +106,58 @@ test('finds a text-only delete action without clicking broader delete labels', a
   assert.equal(root.confirmButton.clicked, 1)
 })
 
+test('clicks the interactive nested Bloks delete confirmation', async () => {
+  const root = createRoot({ includeNestedConfirmDeleteButton: true })
+  const deleter = createInstagramCommentDeleter({
+    root: root as unknown as Document,
+    logger: createLogger(),
+    delay: async () => {},
+    dryRun: false,
+    batchSize: 1,
+    maxBatches: 1,
+  })
+
+  const stats = await deleter.run()
+
+  assert.equal(stats.commentsSelected, 1)
+  assert.equal(root.deleteButton?.clicked, 1)
+  assert.equal(root.nestedConfirmDeleteButton?.clicked, 1)
+  assert.equal(root.confirmButton.clicked, 0)
+})
+
+test('skips non-interactive nested Bloks delete wrappers', async () => {
+  const nonInteractiveDeleteWrapper = createElement({
+    ariaLabel: 'Delete',
+    role: 'button',
+    tagName: 'DIV',
+    style: 'pointer-events: none;',
+  })
+  const interactiveDeleteButton = createElement({
+    ariaLabel: 'Delete',
+    role: 'button',
+    tagName: 'DIV',
+    style: 'pointer-events: auto;',
+  })
+  const root = createRoot({
+    includeAriaDeleteButton: false,
+    customAriaDeleteButtons: [nonInteractiveDeleteWrapper, interactiveDeleteButton],
+  })
+  const deleter = createInstagramCommentDeleter({
+    root: root as unknown as Document,
+    logger: createLogger(),
+    delay: async () => {},
+    dryRun: false,
+    batchSize: 1,
+    maxBatches: 1,
+  })
+
+  await deleter.deleteSelectedComments()
+
+  assert.equal(nonInteractiveDeleteWrapper.clicked, 0)
+  assert.equal(interactiveDeleteButton.clicked, 1)
+  assert.equal(root.confirmButton.clicked, 1)
+})
+
 test('throws a clear error when the select button is missing', async () => {
   const root = createRoot({ includeSelectButton: false })
   const deleter = createInstagramCommentDeleter({
@@ -131,6 +184,15 @@ function createRoot({
   includeClickableSelectDiv = false,
   includeAriaDeleteButton = true,
   includeTextDeleteButton = false,
+  includeNestedConfirmDeleteButton = false,
+  customAriaDeleteButtons = null,
+}: {
+  includeSelectButton?: boolean
+  includeClickableSelectDiv?: boolean
+  includeAriaDeleteButton?: boolean
+  includeTextDeleteButton?: boolean
+  includeNestedConfirmDeleteButton?: boolean
+  customAriaDeleteButtons?: TestElement[] | null
 } = {}): TestRoot {
   const roleButtons = [createElement({ textContent: 'Filters', role: 'button' })]
   if (includeSelectButton) roleButtons.push(createElement({ textContent: 'Select', role: 'button' }))
@@ -141,11 +203,18 @@ function createRoot({
   }
 
   const checkboxes = Array.from({ length: 4 }, () => createElement())
-  const deleteButton = includeAriaDeleteButton ? createElement({ textContent: 'Delete' }) : null
+  const deleteButton = includeAriaDeleteButton ? createElement({ ariaLabel: 'Delete', textContent: 'Delete' }) : null
   const textDeleteButton = includeTextDeleteButton ? createElement({ tagName: 'DIV', textContent: 'Delete' }) : null
+  const nestedConfirmDeleteWrapper = includeNestedConfirmDeleteButton
+    ? createElement({ ariaLabel: 'Delete', role: 'button', tagName: 'DIV', style: 'pointer-events: none;' })
+    : null
+  const nestedConfirmDeleteButton = includeNestedConfirmDeleteButton
+    ? createElement({ ariaLabel: 'Delete', role: 'button', tagName: 'DIV', style: 'pointer-events: auto;' })
+    : null
   const deleteCommentButton = createElement({ textContent: 'Delete comments', role: 'button' })
   const deleteCandidates = [textDeleteButton, deleteCommentButton].filter((element): element is TestElement => !!element)
   const confirmButton = createElement()
+  const ariaDeleteButtons = customAriaDeleteButtons ?? [deleteButton].filter((element): element is TestElement => !!element)
 
   return {
     roleButtons,
@@ -153,6 +222,7 @@ function createRoot({
     checkboxes,
     deleteButton,
     textDeleteButton,
+    nestedConfirmDeleteButton,
     deleteCommentButton,
     confirmButton,
     querySelector(selector) {
@@ -161,6 +231,13 @@ function createRoot({
       return null
     },
     querySelectorAll(selector) {
+      if (selector === '[aria-label="Delete"]') {
+        return deleteButton && deleteButton.clicked > 0 && includeNestedConfirmDeleteButton
+          ? [deleteButton, nestedConfirmDeleteWrapper, nestedConfirmDeleteButton].filter(
+              (element): element is TestElement => !!element,
+            )
+          : ariaDeleteButtons
+      }
       if (selector === '[role="button"]') return roleButtons
       if (selector === 'button,[role="button"],div') return actionCandidates
       if (selector === 'button,[role="button"],[tabindex],div') return deleteCandidates
@@ -174,10 +251,14 @@ function createElement({
   textContent = '',
   tagName = 'BUTTON',
   role = null,
+  ariaLabel = null,
+  style = null,
 }: {
   textContent?: string
   tagName?: string
   role?: string | null
+  ariaLabel?: string | null
+  style?: string | null
 } = {}): TestElement {
   return {
     clicked: 0,
@@ -187,7 +268,9 @@ function createElement({
       this.clicked += 1
     },
     getAttribute(name: string) {
+      if (name === 'aria-label') return ariaLabel
       if (name === 'role') return role
+      if (name === 'style') return style
       return null
     },
   }
