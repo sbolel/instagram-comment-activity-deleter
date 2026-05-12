@@ -50,9 +50,11 @@ function runDemo() {
   const available = commentState.filter((comment) => !comment.deleted)
   const normalizedBatchSize = getNumber(batchSize)
   const normalizedMaxBatches = getNumber(maxBatches)
-  const batchCount = Math.min(normalizedMaxBatches, Math.ceil(available.length / normalizedBatchSize))
-  const limit = Math.min(normalizedBatchSize * batchCount, available.length)
-  const selectedIds = new Set(available.slice(0, limit).map((comment) => comment.id))
+  const manualSelection = available.filter((comment) => comment.selected)
+  const batchLimit = Math.min(normalizedBatchSize * normalizedMaxBatches, available.length)
+  const selectedBatch = manualSelection.length > 0 ? manualSelection : available.slice(0, batchLimit)
+  const batchCount = Math.ceil(selectedBatch.length / normalizedBatchSize)
+  const selectedIds = new Set(selectedBatch.map((comment) => comment.id))
 
   commentState = commentState.map((comment) => ({
     ...comment,
@@ -69,10 +71,10 @@ function runDemo() {
 
   renderComments()
   output.textContent = formatRunResult({
-    batchesAttempted: limit > 0 ? batchCount : 0,
-    commentsSelected: limit,
+    batchesAttempted: selectedBatch.length > 0 ? batchCount : 0,
+    commentsSelected: selectedBatch.length,
     dryRun: dryRun.checked,
-    stoppedBecause: limit > 0 ? 'max-batches-reached' : 'no-comments-found',
+    stoppedBecause: selectedBatch.length > 0 ? 'max-batches-reached' : 'no-comments-found',
   })
 }
 
@@ -88,7 +90,7 @@ function renderComments() {
       checkbox.type = 'checkbox'
       checkbox.checked = comment.selected
       checkbox.disabled = comment.deleted
-      checkbox.setAttribute('aria-label', `Select comment ${comment.id}`)
+      checkbox.setAttribute('aria-label', `Select comment by ${comment.author}: ${comment.text}`)
       checkbox.addEventListener('change', () => {
         commentState = commentState.map((entry) =>
           entry.id === comment.id ? { ...entry, selected: checkbox.checked } : entry,
@@ -137,7 +139,7 @@ function formatRunResult(stats) {
   return [
     `Batches: ${stats.batchesAttempted}`,
     `Comments selected: ${stats.commentsSelected}`,
-    `Mode: ${stats.dryRun ? 'dry run' : 'delete'}`,
+    `Mode: ${stats.dryRun ? 'dry run' : 'simulated local deletion'}`,
     `Stopped: ${stats.stoppedBecause}`,
     `Action delay: ${getNumber(actionDelayMs)}ms`,
     `Checkbox delay: ${getNumber(checkboxDelayMs)}ms`,

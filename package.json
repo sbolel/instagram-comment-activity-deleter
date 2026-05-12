@@ -10,7 +10,8 @@
   "scripts": {
     "build": "node scripts/build.mjs && node scripts/build-extension.mjs",
     "build:extension": "node scripts/build-extension.mjs",
-    "check": "npm run build && npm run typecheck && npm test && node scripts/check-syntax.mjs",
+    "check": "npm run build && npm run typecheck && npm test && node scripts/check-syntax.mjs && npm run check:demo",
+    "check:demo": "test -f demo/index.html && test -f demo/styles.css && node --check demo/app.js",
     "commitlint": "commitlint --verbose",
     "release": "semantic-release",
     "test": "node --test",

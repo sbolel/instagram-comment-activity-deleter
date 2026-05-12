@@ -27,10 +27,7 @@ jobs:
         with:
           node-version: 22
       - name: Validate demo artifact
-        run: |
-          test -f demo/index.html
-          test -f demo/styles.css
-          node --check demo/app.js
+        run: npm run check:demo
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
