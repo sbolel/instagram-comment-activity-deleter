@@ -75,7 +75,7 @@ Load the generated extension folder as an unpacked extension:
 
 After rebuilding, return to the extensions page and choose the extension's reload button so the browser picks up the new files.
 
-The extension uses only `activeTab` and `scripting`, injects the content script after you open the popup, and enables itself only on:
+The extension uses `scripting` plus host access for `https://www.instagram.com/*`, injects the content script after you open the popup, and enables itself only on:
 
 ```text
 https://www.instagram.com/your_activity/interactions/comments

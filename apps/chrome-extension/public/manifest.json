@@ -8,7 +8,9 @@
     "default_title": "Instagram Comment Activity Deleter"
   },
   "permissions": [
-    "activeTab",
     "scripting"
+  ],
+  "host_permissions": [
+    "https://www.instagram.com/*"
   ]
 }
