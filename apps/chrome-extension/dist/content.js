@@ -17,6 +17,7 @@ const DEFAULT_SELECTORS = Object.freeze({
     pageButtons: 'button,[role="button"],div',
     checkbox: '[aria-label="Toggle checkbox"]',
     deleteButton: '[aria-label="Delete"]',
+    deleteButtonCandidates: 'button,[role="button"],[tabindex],div',
     confirmButton: 'button[tabindex="0"]',
 });
 class InstagramCommentDeletionError extends Error {
@@ -48,6 +49,24 @@ function createInstagramCommentDeleter(options = {}) {
         throw new InstagramCommentDeletionError(`Element not found: ${selector}`, {
             selector,
             timeoutMs,
+        });
+    }
+    async function waitForDeleteButton() {
+        const startedAt = Date.now();
+        while (Date.now() - startedAt < config.elementTimeoutMs) {
+            const labelledDeleteButton = root.querySelector(selectors.deleteButton);
+            if (labelledDeleteButton)
+                return labelledDeleteButton;
+            const textDeleteButton = Array.from(root.querySelectorAll(selectors.deleteButtonCandidates)).find((element) => getElementLabel(element) === 'Delete');
+            if (textDeleteButton)
+                return textDeleteButton;
+            await wait(config.pollIntervalMs);
+        }
+        throw new InstagramCommentDeletionError('Delete button not found', {
+            selector: selectors.deleteButton,
+            fallbackSelector: selectors.deleteButtonCandidates,
+            fallbackLabel: 'Delete',
+            timeoutMs: config.elementTimeoutMs,
         });
     }
     async function clickElement(element, label) {
@@ -86,7 +105,7 @@ function createInstagramCommentDeleter(options = {}) {
             logger.info('[dry-run] Skipping delete confirmation flow');
             return;
         }
-        const deleteButton = asClickable(await waitForElement(selectors.deleteButton), 'delete button');
+        const deleteButton = asClickable(await waitForDeleteButton(), 'delete button');
         await clickElement(deleteButton, 'delete button');
         const confirmButton = asClickable(await waitForElement(selectors.confirmButton), 'confirm delete button');
         await clickElement(confirmButton, 'confirm delete button');

@@ -8,7 +8,7 @@
 }
 
 body {
-  width: 480px;
+  width: 640px;
   max-width: 100vw;
   margin: 0;
   color: #1f2328;
@@ -78,7 +78,7 @@ h1 {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px 12px;
 }
 
@@ -125,13 +125,16 @@ input[type="checkbox"] {
 }
 
 button {
-  height: 36px;
+  min-height: 36px;
+  height: auto;
+  padding: 6px 10px;
   border: 1px solid #d0d7de;
   border-radius: 6px;
   color: #24292f;
   background: #ffffff;
   font: inherit;
   font-weight: 650;
+  line-height: 1.2;
   cursor: pointer;
 }
 
@@ -195,5 +198,11 @@ button:disabled {
 
   .danger label {
     color: #ffb1aa;
+  }
+}
+
+@media (max-width: 560px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
