@@ -6,8 +6,8 @@ test('Chrome extension manifest uses narrow MV3 permissions', async () => {
   const manifest = JSON.parse(await readFile('apps/chrome-extension/public/manifest.json', 'utf8'))
 
   assert.equal(manifest.manifest_version, 3)
-  assert.deepEqual(manifest.permissions, ['activeTab', 'scripting'])
-  assert.equal(manifest.host_permissions, undefined)
+  assert.deepEqual(manifest.permissions, ['scripting'])
+  assert.deepEqual(manifest.host_permissions, ['https://www.instagram.com/*'])
 })
 
 test('Chrome extension popup avoids inline script', async () => {

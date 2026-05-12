@@ -50,4 +50,4 @@ If the browser says the manifest cannot be read, make sure you selected `apps/ch
 4. Use "Reset selection" to leave the page in a normal state after a dry run.
 5. To delete, turn off dry run and type `DELETE`.
 
-The extension requests only `activeTab` and `scripting`; it injects the packaged content script after you click the popup on the supported Instagram activity page.
+The extension requests `scripting` plus host access for `https://www.instagram.com/*`; it injects the packaged content script after you click the popup on the supported Instagram activity page.
