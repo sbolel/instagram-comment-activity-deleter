@@ -14,7 +14,9 @@ type TestRoot = {
   roleButtons: TestElement[]
   actionCandidates: TestElement[]
   checkboxes: TestElement[]
-  deleteButton: TestElement
+  deleteButton: TestElement | null
+  textDeleteButton: TestElement | null
+  deleteCommentButton: TestElement
   confirmButton: TestElement
   querySelector: (selector: string) => TestElement | null
   querySelectorAll: (selector: string) => TestElement[]
@@ -44,7 +46,7 @@ test('selects a limited batch in dry-run mode without deleting', async () => {
     root.checkboxes.map((checkbox) => checkbox.clicked),
     [1, 1, 0, 0],
   )
-  assert.equal(root.deleteButton.clicked, 0)
+  assert.equal(root.deleteButton?.clicked, 0)
   assert.equal(logs[0][0], '[dry-run] Skipping delete confirmation flow')
 })
 
@@ -80,7 +82,26 @@ test('clicks delete and confirmation controls when dry-run is disabled', async (
 
   assert.equal(stats.commentsSelected, 1)
   assert.equal(stats.stoppedBecause, 'max-batches-reached')
-  assert.equal(root.deleteButton.clicked, 1)
+  assert.equal(root.deleteButton?.clicked, 1)
+  assert.equal(root.confirmButton.clicked, 1)
+})
+
+test('finds a text-only delete action without clicking broader delete labels', async () => {
+  const root = createRoot({ includeAriaDeleteButton: false, includeTextDeleteButton: true })
+  const deleter = createInstagramCommentDeleter({
+    root: root as unknown as Document,
+    logger: createLogger(),
+    delay: async () => {},
+    dryRun: false,
+    batchSize: 1,
+    maxBatches: 1,
+  })
+
+  const stats = await deleter.run()
+
+  assert.equal(stats.commentsSelected, 1)
+  assert.equal(root.textDeleteButton?.clicked, 1)
+  assert.equal(root.deleteCommentButton.clicked, 0)
   assert.equal(root.confirmButton.clicked, 1)
 })
 
@@ -105,7 +126,12 @@ function createLogger(target: unknown[][] = []) {
   }
 }
 
-function createRoot({ includeSelectButton = true, includeClickableSelectDiv = false } = {}): TestRoot {
+function createRoot({
+  includeSelectButton = true,
+  includeClickableSelectDiv = false,
+  includeAriaDeleteButton = true,
+  includeTextDeleteButton = false,
+} = {}): TestRoot {
   const roleButtons = [createElement({ textContent: 'Filters', role: 'button' })]
   if (includeSelectButton) roleButtons.push(createElement({ textContent: 'Select', role: 'button' }))
 
@@ -115,7 +141,10 @@ function createRoot({ includeSelectButton = true, includeClickableSelectDiv = fa
   }
 
   const checkboxes = Array.from({ length: 4 }, () => createElement())
-  const deleteButton = createElement()
+  const deleteButton = includeAriaDeleteButton ? createElement({ textContent: 'Delete' }) : null
+  const textDeleteButton = includeTextDeleteButton ? createElement({ tagName: 'DIV', textContent: 'Delete' }) : null
+  const deleteCommentButton = createElement({ textContent: 'Delete comments', role: 'button' })
+  const deleteCandidates = [textDeleteButton, deleteCommentButton].filter((element): element is TestElement => !!element)
   const confirmButton = createElement()
 
   return {
@@ -123,6 +152,8 @@ function createRoot({ includeSelectButton = true, includeClickableSelectDiv = fa
     actionCandidates,
     checkboxes,
     deleteButton,
+    textDeleteButton,
+    deleteCommentButton,
     confirmButton,
     querySelector(selector) {
       if (selector === '[aria-label="Delete"]') return deleteButton
@@ -132,6 +163,7 @@ function createRoot({ includeSelectButton = true, includeClickableSelectDiv = fa
     querySelectorAll(selector) {
       if (selector === '[role="button"]') return roleButtons
       if (selector === 'button,[role="button"],div') return actionCandidates
+      if (selector === 'button,[role="button"],[tabindex],div') return deleteCandidates
       if (selector === '[aria-label="Toggle checkbox"]') return checkboxes
       return []
     },
