@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Instagram Comment Activity Deleter Demo</title>
+    <meta
+      name="description"
+      content="Static demo for the Instagram Comment Activity Deleter dry-run-first extension flow."
+    >
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <section class="panel controls-panel" aria-labelledby="controls-title">
+        <header class="panel-header">
+          <div>
+            <p class="label">Demo</p>
+            <h1 id="controls-title">Comment Activity</h1>
+          </div>
+          <span id="pageStatus" class="badge ready">Ready</span>
+        </header>
+
+        <form id="controls" class="controls">
+          <label class="toggle">
+            <input id="dryRun" type="checkbox" checked>
+            <span>Dry run</span>
+          </label>
+
+          <div class="grid">
+            <label>
+              <span>Batch size</span>
+              <input id="batchSize" type="number" min="1" max="5" step="1" value="3">
+            </label>
+            <label>
+              <span>Max batches</span>
+              <input id="maxBatches" type="number" min="1" max="5" step="1" value="1">
+            </label>
+            <label>
+              <span>Action delay</span>
+              <input id="actionDelayMs" type="number" min="0" max="10000" step="100" value="1000">
+            </label>
+            <label>
+              <span>Checkbox delay</span>
+              <input id="checkboxDelayMs" type="number" min="0" max="5000" step="50" value="300">
+            </label>
+          </div>
+
+          <section id="deleteConfirm" class="danger" hidden>
+            <label>
+              <span>Type DELETE to enable deletion</span>
+              <input id="confirmDelete" type="text" autocomplete="off" spellcheck="false" placeholder="DELETE">
+            </label>
+            <p>Simulated deletion only changes this local demo.</p>
+          </section>
+
+          <div class="actions">
+            <button id="runButton" class="primary" type="submit">Dry run</button>
+            <button id="resetButton" class="secondary" type="button">Reset selection</button>
+          </div>
+        </form>
+
+        <section id="output" class="output" aria-live="polite">Dry run is enabled by default.</section>
+      </section>
+
+      <section class="panel comments-panel" aria-labelledby="comments-title">
+        <header class="panel-header">
+          <div>
+            <p class="label">Local preview</p>
+            <h2 id="comments-title">Remaining comments</h2>
+          </div>
+          <span id="commentCount" class="badge">5 comments</span>
+        </header>
+
+        <ul id="comments" class="comments" aria-label="Demo comments"></ul>
+
+        <nav class="links" aria-label="Project links">
+          <a href="https://github.com/sbolel/instagram-comment-activity-deleter">GitHub</a>
+          <a href="https://github.com/sbolel/instagram-comment-activity-deleter/blob/main/docs/operation-guide.md">
+            Operation guide
+          </a>
+          <a href="https://github.com/sbolel/instagram-comment-activity-deleter/blob/main/docs/maintenance.md">
+            Maintenance
+          </a>
+        </nav>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
