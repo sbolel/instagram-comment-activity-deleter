@@ -56,6 +56,12 @@ Paste the generated console script from `dist/instagram-comment-activity-deleter
 
 The repo includes a Manifest V3 extension workspace at `apps/chrome-extension`.
 
+A static demo of the extension flow is deployed with GitHub Pages at:
+
+```text
+https://sbolel.github.io/instagram-comment-activity-deleter/
+```
+
 Build it:
 
 ```sh
